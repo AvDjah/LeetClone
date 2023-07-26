@@ -1,0 +1,185 @@
+package main
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"net/http"
+
+	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson"
+)
+
+func checkBool(err bool) {
+	if err == false {
+		log.Fatal("Error")
+	}
+}
+
+type LoginCheckResult struct {
+	Verdict bool   `json:"verdict"`
+	Message string `json:"message"`
+}
+
+func getUserFromDB(email string) (User, bool) {
+	client := ResolveClientDB()
+	userCollection := client.Database("testing").Collection("users")
+	result := userCollection.FindOne(context.TODO(), bson.D{{Key: "email", Value: email}})
+	if result.Err() != nil {
+		fmt.Println("No user found")
+		return User{}, false
+	}
+	var user User
+	err := result.Decode(&user)
+	if err != nil {
+		log.Fatal("Issue Decoding User")
+		return User{}, false
+	}
+	return user, true
+}
+
+func checkLoginCredentials(email string, password string) LoginCheckResult {
+
+	// GET USER FROM DB USING EMAIL
+	user, errBool := getUserFromDB(email)
+	checkBool(errBool)
+	fmt.Println("checkLogin", 1)
+	msg, err := json.Marshal(user)
+	check(err)
+	fmt.Println("checkLogin", 2)
+	var verdict = false
+	if password == user.Password {
+		verdict = true
+	}
+
+	return LoginCheckResult{
+		Verdict: verdict,
+		Message: string(msg),
+	}
+}
+
+type LoginCheckBody struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type JWTToken struct {
+	JWT   string `bson:"token,omitempty"`
+	Email string `bson:"email,omitempty"`
+}
+
+func storeTokenInDB(token string, email string) bool {
+	client := ResolveClientDB()
+	tokenCollection := client.Database("testing").Collection("jwtTokens")
+
+	var JWTtoken = JWTToken{
+		Email: email,
+		JWT:   token,
+	}
+	result, err := tokenCollection.InsertOne(context.TODO(), JWTtoken)
+	check(err)
+	if err != nil {
+		return false
+	}
+
+	fmt.Print(result)
+	return true
+}
+
+func setTokenCookie(w *http.ResponseWriter, token string) {
+	http.SetCookie(*w, &http.Cookie{
+		Name:     "token",
+		Value:    token,
+		HttpOnly: true,
+	})
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	body, err := io.ReadAll(r.Body)
+	check(err)
+
+	var loginCheckBody LoginCheckBody
+	err = json.Unmarshal(body, &loginCheckBody)
+	check(err)
+
+	out := checkLoginCredentials(loginCheckBody.Email, loginCheckBody.Password)
+
+	jsonOutput, err := json.Marshal(out)
+	check(err)
+
+	// If Login is verified
+	if out.Verdict == true {
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"email": loginCheckBody.Email,
+		})
+		tokenString, err := token.SignedString([]byte("mysecret"))
+		check(err)
+
+		// stored := storeTokenInDB(tokenString, loginCheckBody.Email)
+
+		// if stored == false {
+		// 	fmt.Fprintln(w, "Could Not store token")
+		// 	return
+		// }
+
+		setTokenCookie(&w, tokenString)
+	} else {
+		fmt.Print("Login Failed")
+	}
+
+	fmt.Fprintf(w, string(jsonOutput))
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "token",
+		Value: "",
+	})
+}
+
+func checkLoginHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	var token string
+	for _, val := range r.Cookies() {
+		if val.Name == "token" {
+			token = val.Value
+		}
+	}
+
+	output := make(map[string]string)
+
+	if len(token) == 0 {
+		output["result"] = "false"
+		jsonOut, err := json.Marshal(output)
+		check(err)
+		w.Write(jsonOut)
+	}
+
+	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
+		return []byte("mysecret"), nil
+	})
+	check(err)
+
+	if claims, ok := t.Claims.(jwt.MapClaims); ok && t.Valid {
+		output["result"] = "true"
+		output["email"] = fmt.Sprint(claims["email"])
+	} else {
+		output["result"] = "false"
+	}
+	jsonOutput, err := json.Marshal(output)
+	check(err)
+	w.Write(jsonOutput)
+}

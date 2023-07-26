@@ -34,12 +34,21 @@ func main() {
 	if err != nil {
 		log.Panic(("Docker init error"))
 	}
+
 	http.HandleFunc("/", mainHandler)
+
+	// DB TEST HANDLERS
 	http.HandleFunc("/addUser", addUserHandler)
 	http.HandleFunc("/getUser", getUserHandler)
+
+	// CODE RUNNING HANDLERS
 	http.HandleFunc("/getProblem", getProblemHandler)
 	http.HandleFunc("/runCode", runCodeHandler)
-	// http.HandleFunc("/getUserList")
+
+	// LOGIN HANDLERS
+	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/logout", logoutHandler)
+	http.HandleFunc("/checkLogin", checkLoginHandler)
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {
