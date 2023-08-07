@@ -3,19 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net/http"
 	"os/exec"
-
-	"github.com/joho/godotenv"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
 )
-
-func check(err error) {
-	if err != nil {
-		log.Fatal(err)
-	}
-}
 
 func main() {
 	// Use the SetServerAPIOptions() method to set the Stable API version to 1

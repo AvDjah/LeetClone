@@ -1,15 +1,15 @@
 package main
 
 import (
+	"backend/helpers"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson"
 	"io"
 	"log"
 	"net/http"
-
-	"github.com/golang-jwt/jwt/v5"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func checkBool(err bool) {
@@ -47,7 +47,7 @@ func checkLoginCredentials(email string, password string) LoginCheckResult {
 	checkBool(errBool)
 	fmt.Println("checkLogin", 1)
 	msg, err := json.Marshal(user)
-	check(err)
+	helpers.Check(err)
 	fmt.Println("checkLogin", 2)
 	var verdict = false
 	if password == user.Password {
@@ -79,7 +79,7 @@ func storeTokenInDB(token string, email string) bool {
 		JWT:   token,
 	}
 	result, err := tokenCollection.InsertOne(context.TODO(), JWTtoken)
-	check(err)
+	helpers.Check(err)
 	if err != nil {
 		return false
 	}
@@ -102,16 +102,16 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	body, err := io.ReadAll(r.Body)
-	check(err)
+	helpers.Check(err)
 
 	var loginCheckBody LoginCheckBody
 	err = json.Unmarshal(body, &loginCheckBody)
-	check(err)
+	helpers.Check(err)
 
 	out := checkLoginCredentials(loginCheckBody.Email, loginCheckBody.Password)
 
 	jsonOutput, err := json.Marshal(out)
-	check(err)
+	helpers.Check(err)
 
 	// If Login is verified
 	if out.Verdict == true {
@@ -119,7 +119,7 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			"email": loginCheckBody.Email,
 		})
 		tokenString, err := token.SignedString([]byte("mysecret"))
-		check(err)
+		helpers.Check(err)
 
 		// stored := storeTokenInDB(tokenString, loginCheckBody.Email)
 
@@ -164,14 +164,14 @@ func checkLoginHandler(w http.ResponseWriter, r *http.Request) {
 	if len(token) == 0 {
 		output["result"] = "false"
 		jsonOut, err := json.Marshal(output)
-		check(err)
+		helpers.Check(err)
 		w.Write(jsonOut)
 	}
 
 	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		return []byte("mysecret"), nil
 	})
-	check(err)
+	helpers.Check(err)
 
 	if claims, ok := t.Claims.(jwt.MapClaims); ok && t.Valid {
 		output["result"] = "true"
@@ -180,6 +180,6 @@ func checkLoginHandler(w http.ResponseWriter, r *http.Request) {
 		output["result"] = "false"
 	}
 	jsonOutput, err := json.Marshal(output)
-	check(err)
+	helpers.Check(err)
 	w.Write(jsonOutput)
 }

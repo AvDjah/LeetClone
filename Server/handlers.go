@@ -1,24 +1,24 @@
 package main
 
 import (
-	"bytes"
+	"backend/helpers"
+	"backend/services"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"go.mongodb.org/mongo-driver/bson"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
-
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "Heelo")
+	_, err := fmt.Fprintln(w, "Heelo")
+	helpers.Check(err)
 }
 
 func addUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -135,68 +135,10 @@ type CodeOutput struct {
 	Output  string `json:"output"`
 }
 
-var container_name = "sad_rosalind"
-
-func command1() []byte {
-
-	cmd := exec.Command("docker", "exec", container_name, "python3", "main.py")
-	//cmd := exec.Command("docker", "run -it leet")
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-		return []byte("Error")
-	}
-	fmt.Println("Result: " + out.String())
-	return out.Bytes()
-}
-
-func command0() []byte {
-	cmd := exec.Command("docker", "cp", "./Code/main.py", container_name+":/")
-	var out bytes.Buffer
-	var stderr bytes.Buffer
-	cmd.Stdout = &out
-	cmd.Stderr = &stderr
-	err := cmd.Run()
-	if err != nil {
-		fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-		return []byte("Error")
-	}
-	fmt.Println("Result: " + out.String())
-	return out.Bytes()
-}
-
-func runCommands() []byte {
-	out1 := command0()
-	fmt.Println("out1: ", string(out1))
-	out2 := command1()
-	fmt.Println("out2: ", string(out2))
-	return out2
-}
-
 func runFile() []byte {
 
-	ans := runCommands()
+	ans := services.RunCommands()
 	return ans
-	//cmd1 := exec.Command("docker", "cp", "./main.py", "cont:")
-	//err1 := cmd1.Run()
-	//check(err1)
-	//cmd := exec.Command("docker", "exec", "cont", "python3", "main.py")
-	////cmd := exec.Command("docker", "run -it leet")
-	//var out bytes.Buffer
-	//var stderr bytes.Buffer
-	//cmd.Stdout = &out
-	//cmd.Stderr = &stderr
-	//err := cmd.Run()
-	//if err != nil {
-	//	fmt.Println(fmt.Sprint(err) + ": " + stderr.String())
-	//	return []byte("Error")
-	//}
-	//fmt.Println("Result: " + out.String())
-	//return out.Bytes()
 }
 
 func runCodeHandler(w http.ResponseWriter, r *http.Request) {
@@ -212,7 +154,7 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 	code := string(body)
 	fmt.Println(code)
 	err = os.WriteFile("./Code/main.py", body, 0644)
-	check(err)
+	helpers.Check(err)
 	output := runFile()
 	codeOutput := CodeOutput{
 		Verdict: false,
@@ -224,5 +166,4 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(string(marshalled), string(output))
 	_, err = fmt.Fprintln(w, string(marshalled))
-
 }
