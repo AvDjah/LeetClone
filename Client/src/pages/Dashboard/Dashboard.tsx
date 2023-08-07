@@ -9,12 +9,12 @@ import { useNavigate } from "react-router-dom"
 export const Navbar = ()=>{
 
     return (
-        <div className="" >
+        <div className="mx-2 p-4" >
             <nav>
-                <span className="bg-white border-2 rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg">Home</span>
-                <span className="bg-white border-2 rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg " >Problems</span>
-                <span className="bg-white border-2 rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg " >About</span>
-                <span className="bg-white border-2 rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg "  >My Profile</span>
+                <span className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg">Home</span>
+                <span className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg " >Problems</span>
+                <span className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg " >About</span>
+                <span className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg "  >My Profile</span>
             </nav>
         </div>
     )
@@ -24,12 +24,11 @@ export const Navbar = ()=>{
 export const Banner = () => {
     return (
         <div>
-            <div className="text-5xl font-poppins text-white font-mono p-8 m-4">SheetCode</div>
+            <div className="text-5xl font-poppins text-white font-mono p-2 m-2">SheetCode</div>
             <Navbar/>
         </div>
     )
 }
-
 
 
 
@@ -40,21 +39,45 @@ function Dashboard() {
 
 
     useEffect(() => {
-        if (loginContext.isLoggedIn === false) {
+        if (!loginContext.isLoggedIn) {
             navigate("/login")
-        } else {
-            console.log("Logged In")
         }
     })
 
     const handleLogOut = () => {
+
+        fetch("http://localhost:8080/logout").then(
+            res => {
+                return res.json()
+            }
+        ).then(res => {
+            console.log(res)
+        }).catch(e => {
+            console.log(e)
+        }).finally(() => {
+            console.log("Logged Out")
+        })
+
         if (loginContext.setLoginStatus !== null)
             loginContext.setLoginStatus(false)
+        if(loginContext.setUserProfile !== null)
+            loginContext.setUserProfile(null)
+    }
+
+    const loginPing = () => {
+        fetch("http://localhost:8080/checkLogin",{
+            credentials : "include",
+        }).then(res => res.text()).then(
+            res => {
+                console.log(res)
+            }
+        ).catch(e => {console.log(e)})
     }
 
     return <div>
         <div className="fixed right-8 top-8 p-2 bg-white active:translate-y-1 transition-all ease-in-out cursor-pointer" onClick={handleLogOut} >Log Out</div>
         <Banner/>
+        <div onClick={loginPing} className="p-4 text-xl inline-block text-white bg-amber-500 cursor-pointer active:translate-y-1" > Ping Login Check </div>
     </div>
 
 }
