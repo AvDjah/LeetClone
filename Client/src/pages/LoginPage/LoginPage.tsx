@@ -7,14 +7,20 @@ type LoginResult = {
     message : string
 }
 
+export const saveJWTToLocalStorage = (token : string) => {
+    localStorage.setItem("jwt",token)
+    console.log("Saved JWT Token To Storage")
+}
+
+export const clearJWTFromLocalStorage = () => {
+    localStorage.setItem("jwt","")
+}
 
 export const LoginBox =  () => {
 
     const loginContext = useContext(LoginContext)
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
-
-
 
     const handleLogin = () => {
 

@@ -38,6 +38,9 @@ func main() {
 	http.HandleFunc("/getProblem", getProblemHandler)
 	http.HandleFunc("/runCode", runCodeHandler)
 
+	//QUESTION RETRIEVE
+	http.HandleFunc("/getAllProblems", getAllProblems)
+
 	// LOGIN HANDLERS
 	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/logout", logoutHandler)

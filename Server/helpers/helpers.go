@@ -5,9 +5,10 @@ import (
 	"log"
 )
 
-func Check(err error) {
+func Check(err error, at string) {
 	if err != nil {
-		log.Fatal(err)
+
+		log.Fatal(at+": ", err)
 	}
 }
 

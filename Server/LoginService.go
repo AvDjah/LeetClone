@@ -47,7 +47,7 @@ func checkLoginCredentials(email string, password string) LoginCheckResult {
 	checkBool(errBool)
 	fmt.Println("checkLogin", 1)
 	msg, err := json.Marshal(user)
-	helpers.Check(err)
+	helpers.Check(err, "")
 	fmt.Println("checkLogin", 2)
 	var verdict = false
 	if password == user.Password {
@@ -79,7 +79,7 @@ func storeTokenInDB(token string, email string) bool {
 		JWT:   token,
 	}
 	result, err := tokenCollection.InsertOne(context.TODO(), JWTtoken)
-	helpers.Check(err)
+	helpers.Check(err, "")
 	if err != nil {
 		return false
 	}
@@ -90,28 +90,27 @@ func storeTokenInDB(token string, email string) bool {
 
 func setTokenCookie(w *http.ResponseWriter, token string) {
 	http.SetCookie(*w, &http.Cookie{
-		Name:     "token",
-		Value:    token,
-		HttpOnly: true,
+		Name:  "token",
+		Value: token,
 	})
 }
 
 func loginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	body, err := io.ReadAll(r.Body)
-	helpers.Check(err)
+	helpers.Check(err, "")
 
 	var loginCheckBody LoginCheckBody
 	err = json.Unmarshal(body, &loginCheckBody)
-	helpers.Check(err)
+	helpers.Check(err, "")
 
 	out := checkLoginCredentials(loginCheckBody.Email, loginCheckBody.Password)
 
 	jsonOutput, err := json.Marshal(out)
-	helpers.Check(err)
+	helpers.Check(err, "")
 
 	// If Login is verified
 	if out.Verdict == true {
@@ -119,19 +118,17 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 			"email": loginCheckBody.Email,
 		})
 		tokenString, err := token.SignedString([]byte("mysecret"))
-		helpers.Check(err)
-
-		// stored := storeTokenInDB(tokenString, loginCheckBody.Email)
-
-		// if stored == false {
-		// 	fmt.Fprintln(w, "Could Not store token")
-		// 	return
-		// }
+		helpers.Check(err, "")
 
 		setTokenCookie(&w, tokenString)
 	} else {
 		fmt.Print("Login Failed")
 	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:  "HELO",
+		Value: "BULGA",
+	})
 
 	fmt.Fprintf(w, string(jsonOutput))
 }
@@ -145,11 +142,15 @@ func logoutHandler(w http.ResponseWriter, r *http.Request) {
 		Name:  "token",
 		Value: "",
 	})
+	var result = "{ \"verdict\" : \"Logout Success\" }"
+
+	_, err := w.Write([]byte(result))
+	helpers.Check(err, "")
 }
 
 func checkLoginHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
 	var token string
@@ -159,19 +160,25 @@ func checkLoginHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	helpers.Printer("TOKEN:", token)
+
 	output := make(map[string]string)
 
 	if len(token) == 0 {
 		output["result"] = "false"
 		jsonOut, err := json.Marshal(output)
-		helpers.Check(err)
+		helpers.Check(err, "")
 		w.Write(jsonOut)
 	}
 
 	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		return []byte("mysecret"), nil
 	})
-	helpers.Check(err)
+
+	if err != nil {
+		w.Write([]byte("FAILURE"))
+		return
+	}
 
 	if claims, ok := t.Claims.(jwt.MapClaims); ok && t.Valid {
 		output["result"] = "true"
@@ -180,6 +187,6 @@ func checkLoginHandler(w http.ResponseWriter, r *http.Request) {
 		output["result"] = "false"
 	}
 	jsonOutput, err := json.Marshal(output)
-	helpers.Check(err)
+	helpers.Check(err, "")
 	w.Write(jsonOutput)
 }

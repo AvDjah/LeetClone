@@ -18,7 +18,7 @@ import (
 
 func mainHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprintln(w, "Heelo")
-	helpers.Check(err)
+	helpers.Check(err, "")
 }
 
 func addUserHandler(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +154,7 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 	code := string(body)
 	fmt.Println(code)
 	err = os.WriteFile("./Code/main.py", body, 0644)
-	helpers.Check(err)
+	helpers.Check(err, "")
 	output := runFile()
 	codeOutput := CodeOutput{
 		Verdict: false,
@@ -166,4 +166,27 @@ func runCodeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println(string(marshalled), string(output))
 	_, err = fmt.Fprintln(w, string(marshalled))
+}
+
+func getAllProblems(w http.ResponseWriter, r *http.Request) {
+
+	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json")
+
+	db := services.GetConnection()
+	fmt.Println("getAllProblems")
+
+	params := r.URL.Query()
+	offset, err := strconv.Atoi(params["offset"][0])
+	helpers.Check(err, "Parsing Offset from query parameters")
+	limit, err := strconv.Atoi(params["limit"][0])
+	helpers.Check(err, "Parsing Limit from query parameters")
+
+	questions := services.GetAllProblems(db, offset, limit)
+	jsonOut, err := json.Marshal(questions)
+	helpers.Check(err, "Convet Questions to JSON")
+	w.Write(jsonOut)
+
 }

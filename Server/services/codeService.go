@@ -17,7 +17,7 @@ func moveFilesToContainer() []byte {
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-	helpers.Check(err)
+	helpers.Check(err, "")
 
 	if out.String() == "Success" {
 		return []byte("Success")
@@ -35,7 +35,7 @@ func runFileInContainer() []byte {
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-	helpers.Check(err)
+	helpers.Check(err, "")
 
 	helpers.Printer("runFileInContainer: ", out.String())
 

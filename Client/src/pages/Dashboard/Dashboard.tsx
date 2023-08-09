@@ -1,6 +1,7 @@
 import { useContext, useEffect } from "react"
 import { LoginContext } from "../../App.tsx"
 import { useNavigate } from "react-router-dom"
+import {QuestionList} from "./Components/QuestionList.tsx";
 
 
 
@@ -29,7 +30,6 @@ export const Banner = () => {
         </div>
     )
 }
-
 
 
 function Dashboard() {
@@ -74,10 +74,11 @@ function Dashboard() {
         ).catch(e => {console.log(e)})
     }
 
-    return <div>
+    return <div className="relative">
         <div className="fixed right-8 top-8 p-2 bg-white active:translate-y-1 transition-all ease-in-out cursor-pointer" onClick={handleLogOut} >Log Out</div>
         <Banner/>
-        <div onClick={loginPing} className="p-4 text-xl inline-block text-white bg-amber-500 cursor-pointer active:translate-y-1" > Ping Login Check </div>
+        <QuestionList/>
+        <div onClick={loginPing} className="block text-black p-4 text-xl m-8 text-center bg-amber-500 cursor-pointer active:translate-y-1" > Ping Login Check </div>
     </div>
 
 }

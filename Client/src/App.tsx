@@ -40,7 +40,7 @@ setUserProfile : null})
 
 function App() {
 
-  const [isLoggedIn, setLoginStatus] = useState(false)
+  const [isLoggedIn, setLoginStatus] = useState(true)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
 
