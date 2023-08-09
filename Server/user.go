@@ -16,8 +16,6 @@ type User struct {
 
 func addUser(user User, ch chan string) {
 
-	client := ResolveClientDB()
-
 	userCollection := client.Database("testing").Collection("users")
 
 	result, err := userCollection.InsertOne(context.TODO(), user)
@@ -32,7 +30,6 @@ func addUser(user User, ch chan string) {
 }
 
 func getUser(email string, ch chan string) {
-	client := ResolveClientDB()
 	userCollection := client.Database("testing").Collection("users")
 	result := userCollection.FindOne(context.TODO(), bson.D{{Key: "email", Value: email}})
 	if result.Err() != nil {

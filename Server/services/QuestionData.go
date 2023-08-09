@@ -18,29 +18,6 @@ type Question struct {
 	Submissions    int     `json:"submissions"`
 }
 
-const (
-	host     = "db.eglrbextonyjgrhubvjv.supabase.co"
-	port     = 5432
-	user     = "postgres"
-	dbname   = "postgres"
-	password = "Arvindmeena20"
-)
-
-func GetConnection() *sql.DB {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-
-	db, err := sql.Open("postgres", psqlInfo)
-	helpers.Check(err, "POSTGRES_CONNECTION_OPEN")
-	//defer db.Close()
-
-	err = db.Ping()
-	helpers.Check(err, "PING_POSTGRES_SERVER")
-	fmt.Println("POSTGRES CONNECTED")
-	return db
-}
-
 func GetAllProblems(db *sql.DB, offset int, limit int) []Question {
 	rows, err := db.Query(fmt.Sprintf("select * from \"Questions\" offset %d limit %d", offset, limit))
 	helpers.Check(err, "Retrieving All rows")

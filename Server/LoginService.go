@@ -24,7 +24,6 @@ type LoginCheckResult struct {
 }
 
 func getUserFromDB(email string) (User, bool) {
-	client := ResolveClientDB()
 	userCollection := client.Database("testing").Collection("users")
 	result := userCollection.FindOne(context.TODO(), bson.D{{Key: "email", Value: email}})
 	if result.Err() != nil {
@@ -71,7 +70,6 @@ type JWTToken struct {
 }
 
 func storeTokenInDB(token string, email string) bool {
-	client := ResolveClientDB()
 	tokenCollection := client.Database("testing").Collection("jwtTokens")
 
 	var JWTtoken = JWTToken{

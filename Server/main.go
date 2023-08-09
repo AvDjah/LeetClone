@@ -1,14 +1,19 @@
 package main
 
 import (
+	"backend/Database"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net/http"
-	"os/exec"
 )
+
+var PgDB *sql.DB
+var client *mongo.Client
 
 func main() {
 	// Use the SetServerAPIOptions() method to set the Stable API version to 1
@@ -16,17 +21,15 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client := ResolveClientDB()
+	client = Database.ResolveClientDB()
+	PgDB = Database.GetPgConnection()
+	Database.PgClient = Database.GetPgConnection()
+	Database.Client = Database.ResolveClientDB()
 
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		panic(err)
 	}
 	fmt.Println("DB Connected")
-	cmd := exec.Command("newgrp", "docker")
-	err = cmd.Run()
-	if err != nil {
-		log.Panic(("Docker init error"))
-	}
 
 	http.HandleFunc("/", mainHandler)
 
@@ -38,8 +41,9 @@ func main() {
 	http.HandleFunc("/getProblem", getProblemHandler)
 	http.HandleFunc("/runCode", runCodeHandler)
 
-	//QUESTION RETRIEVE
-	http.HandleFunc("/getAllProblems", getAllProblems)
+	//QUESTION HANDLERS
+	http.HandleFunc("/getAllProblems", getAllProblemsHandler)
+	http.HandleFunc("/addAttempted", addAttemptedHandler)
 
 	// LOGIN HANDLERS
 	http.HandleFunc("/login", loginHandler)
