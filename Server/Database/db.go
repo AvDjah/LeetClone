@@ -53,14 +53,15 @@ func CloseClientDB() {
 }
 
 const (
-	host     = "db.eglrbextonyjgrhubvjv.supabase.co"
-	port     = 5432
-	user     = "postgres"
-	dbname   = "postgres"
-	password = "Arvindmeena20"
+	host   = "db.eglrbextonyjgrhubvjv.supabase.co"
+	port   = 5432
+	user   = "postgres"
+	dbname = "postgres"
 )
 
 func GetPgConnection() *sql.DB {
+
+	var password = os.Getenv("POSTGRES_PASSWORD")
 
 	if PgClient != nil {
 		return PgClient
