@@ -1,15 +1,22 @@
 package main
 
 import (
-	"backend/Database"
+	"backend/database"
+	"backend/handlers"
+	"backend/helpers"
+	"backend/middleware"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	jwtmiddleware "github.com/auth0/go-jwt-middleware/v2"
+	"github.com/auth0/go-jwt-middleware/v2/validator"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"net/http"
+	"strings"
 )
 
 var PgDB *sql.DB
@@ -21,10 +28,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	client = Database.ResolveClientDB()
-	PgDB = Database.GetPgConnection()
-	Database.PgClient = Database.GetPgConnection()
-	Database.Client = Database.ResolveClientDB()
+	client = database.ResolveClientDB()
+	PgDB = database.GetPgConnection()
+	database.PgClient = database.GetPgConnection()
+	database.MongoClient = database.ResolveClientDB()
 
 	if err := client.Ping(context.TODO(), readpref.Primary()); err != nil {
 		panic(err)
@@ -33,22 +40,42 @@ func main() {
 
 	http.HandleFunc("/", mainHandler)
 
-	// DB TEST HANDLERS
-	http.HandleFunc("/addUser", addUserHandler)
-	http.HandleFunc("/getUser", getUserHandler)
-
 	// CODE RUNNING HANDLERS
 	http.HandleFunc("/getProblem", getProblemHandler)
 	http.HandleFunc("/runCode", runCodeHandler)
 
 	//QUESTION HANDLERS
 	http.HandleFunc("/getAllProblems", getAllProblemsHandler)
-	http.HandleFunc("/addAttempted", addAttemptedHandler)
+	http.HandleFunc("/addAttempted", handlers.AddAttemptedHandler)
+	http.HandleFunc("/getAttempted", handlers.GetAttemptedHandler)
+	http.HandleFunc("/getSelectedID", handlers.GetSelectedID)
 
 	// LOGIN HANDLERS
-	http.HandleFunc("/login", loginHandler)
-	http.HandleFunc("/logout", logoutHandler)
-	http.HandleFunc("/checkLogin", checkLoginHandler)
+	http.HandleFunc("/signUp", handlers.RegisterUser)
+	http.HandleFunc("/getUser", handlers.GetUser)
+
+	logger := middleware.EnsureValidToken()(
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// CORS Headers.
+			w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type,Authorization")
+
+			token := r.Context().Value(jwtmiddleware.ContextKey{}).(*validator.ValidatedClaims)
+			fmt.Println("Token:", token)
+			claims := token.CustomClaims.(*middleware.CustomClaims)
+			result := strings.Split(claims.Scope, " ")
+
+			fmt.Println("claims: ", result)
+			mp := make(map[string]string)
+			mp["Output"] = "Success"
+			marshall, err := json.Marshal(mp)
+			helpers.Check(err, "Marshalling map")
+			w.Write(marshall)
+		}),
+	)
+
+	http.Handle("/private", logger)
 
 	err = http.ListenAndServe(":8080", nil)
 	if err != nil {

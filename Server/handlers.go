@@ -6,9 +6,7 @@ import (
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
-	"go.mongodb.org/mongo-driver/bson"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -19,37 +17,6 @@ import (
 func mainHandler(w http.ResponseWriter, r *http.Request) {
 	_, err := fmt.Fprintln(w, "Heelo")
 	helpers.Check(err, "")
-}
-
-func addUserHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Fatal("Issue reading body : addUser : ", err)
-	}
-
-	var user User
-	err = bson.UnmarshalExtJSON(body, true, &user)
-	if err != nil {
-		log.Fatal(err)
-	}
-	insertChannel := make(chan string)
-	go addUser(user, insertChannel)
-
-	out := <-insertChannel
-	fmt.Fprintln(w, out)
-}
-
-func getUserHandler(w http.ResponseWriter, r *http.Request) {
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Fatal("Issue reading email: ", err)
-	}
-	email := string(body)
-	ch := make(chan string)
-	go getUser(email, ch)
-
-	out := <-ch
-	fmt.Fprintln(w, out)
 }
 
 type Problem struct {
@@ -187,21 +154,4 @@ func getAllProblemsHandler(w http.ResponseWriter, r *http.Request) {
 	jsonOut, err := json.Marshal(questions)
 	helpers.Check(err, "Convert Questions to JSON")
 	w.Write(jsonOut)
-
-}
-
-func addAttemptedHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "http://localhost:5173")
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-	w.Header().Set("Content-Type", "application/json")
-
-	params := r.URL.Query()
-	userId := params["userId"][0]
-	questionId := params["questionId"][0]
-
-	services.AddAttemptedQuestion(userId, questionId)
-
-	w.Write([]byte("Done"))
-
 }
