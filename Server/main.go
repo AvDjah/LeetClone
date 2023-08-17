@@ -46,9 +46,12 @@ func main() {
 
 	//QUESTION HANDLERS
 	http.HandleFunc("/getAllProblems", getAllProblemsHandler)
-	http.HandleFunc("/addAttempted", handlers.AddAttemptedHandler)
-	http.HandleFunc("/getAttempted", handlers.GetAttemptedHandler)
+	//http.HandleFunc("/addAttempted", handlers.AddAttemptedHandler)
+	//http.HandleFunc("/getAttempted", handlers.GetAttemptedHandler)
 	http.HandleFunc("/getSelectedID", handlers.GetSelectedID)
+
+	http.Handle("/getAttempted", middleware.EnsureValidToken()(http.HandlerFunc(handlers.GetAttemptedHandler)))
+	http.Handle("/addAttempted", middleware.EnsureValidToken()(http.HandlerFunc(handlers.AddAttemptedHandler)))
 
 	// LOGIN HANDLERS
 	http.HandleFunc("/signUp", handlers.RegisterUser)

@@ -1,38 +1,9 @@
-import {useContext, useEffect} from "react"
+import {useContext, useEffect, useState} from "react"
 import {LoginContext} from "../../App.tsx"
-import {useNavigate} from "react-router-dom"
-import {QuestionList} from "./Components/QuestionList.tsx";
 import {useAuth0} from "@auth0/auth0-react";
 import {PersonalQuestionList} from "./Components/PersonalQuestionList.tsx";
-
-
-export const Navbar = () => {
-
-    return (
-        <div className="mx-2 p-4">
-            <nav>
-                <span
-                    className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg">Home</span>
-                <span
-                    className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg ">Problems</span>
-                <span
-                    className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg ">About</span>
-                <span
-                    className="hover:text-blue-400 text-white rounded-lg border-blue-500 mx-4 inline-block p-2 transition-all ease-in-out active:translate-y-0.5 cursor-pointer text-lg ">My Profile</span>
-            </nav>
-        </div>
-    )
-}
-
-
-export const Banner = () => {
-    return (
-        <div>
-            <div className="text-5xl font-poppins text-white font-mono p-2 m-2">SheetCode</div>
-            <Navbar/>
-        </div>
-    )
-}
+import {Banner} from "../../components/Banner.tsx";
+import {QuestionList} from "./Components/QuestionList.tsx";
 
 
 function Dashboard() {
@@ -40,7 +11,11 @@ function Dashboard() {
     const loginContext = useContext(LoginContext)
     const {logout, user, getAccessTokenSilently, isAuthenticated} = useAuth0()
 
-    console.log("LoginContext:", loginContext.userProfile)
+    const [tab,setTab] = useState(0)
+
+    const options = [ "HOME" , "MY PROBLEMS" , "ALL PROBLEMS", "ABOUT" ]
+    const tabs = [ <PersonalQuestionList />, <QuestionList />, <div>3</div>, <div>4</div>]
+
 
     const getPersonalData = async () => {
         try {
@@ -53,29 +28,12 @@ function Dashboard() {
                     }
                 });
 
-            const responseData = await response.json();
+            const responseData = await response.json() as { data : string };
             console.log(responseData)
         } catch (error) {
             console.error(error);
         }
     };
-
-    useEffect(() => {
-        const getUser = async () => {
-            try {
-                const accessToken = await getAccessTokenSilently({
-                    authorizationParams: {
-                        audience: "https://quickstarts/api",
-                        scope: "read:messages openid email profile"
-                    }
-                })
-
-
-            } catch (e) {
-                console.log(e)
-            }
-        }
-    }, [getAccessTokenSilently]);
 
     useEffect(() => {
         console.log("User: ", user?.email)
@@ -122,30 +80,41 @@ function Dashboard() {
         })
     }
 
+
+
     return <div className="relative">
         <div className="fixed right-8 top-8 p-2 bg-white active:translate-y-1 transition-all ease-in-out cursor-pointer"
              onClick={handleLogOut}>Log Out
         </div>
-        <Banner/>
+        <Banner items={options} selectedTab={tab}  setTab={setTab}  />
         {/*<QuestionList/>*/}
         <div className="text-white w-4/5 mx-auto border-2 p-4 text-xl">
-            <PersonalQuestionList/>
+            { tabs.map((item,index) => {
+                return <div key={index} style={ {
+                    display : tab === index ? "block" : "none"
+                }}>{item}</div>
+            }) }
         </div>
-        <div onClick={loginPing}
-             className="block text-black p-4 text-xl m-8 text-center bg-amber-500 cursor-pointer active:translate-y-1"> Ping
-            Login Check
-        </div>
-        <div
-            className="block text-black p-4 text-xl m-8 text-center bg-amber-500 cursor-pointer active:translate-y-1"
-            onClick={() => {
-                getPersonalData().catch(e => console.log(e))
-            }}
-        >
-            GetPersonal
-        </div>
+
     </div>
 
 }
 
 
 export default Dashboard
+
+
+
+// DEBUG BUTTONS
+// <div onClick={loginPing}
+// className="block text-black p-4 text-xl m-8 text-center bg-amber-500 cursor-pointer active:translate-y-1"> Ping
+// Login Check
+// </div>
+// <div
+//     className="block text-black p-4 text-xl m-8 text-center bg-amber-500 cursor-pointer active:translate-y-1"
+//     onClick={() => {
+//         getPersonalData().catch(e => console.log(e))
+//     }}
+// >
+//     GetPersonal
+// </div>

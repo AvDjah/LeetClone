@@ -8,7 +8,7 @@ import {QuestionItem} from "./QuestionItem.tsx";
 export const PersonalQuestionList = () => {
 
     const loginContext = useContext(LoginContext)
-    const {user} = useAuth0()
+    const {user, getAccessTokenSilently} = useAuth0()
     const [questions, setQuestions] = useState<Question[]>([])
 
     useEffect(() => {
@@ -19,9 +19,17 @@ export const PersonalQuestionList = () => {
             if (user.email === undefined) {
                 return
             } else {
-                fetch("http://localhost:8080/getAttempted?" + new URLSearchParams({
-                    email: user.email
-                })).then(res => res.json()).then((res: PersonalQuestion) => {
+                getAccessTokenSilently().then(res => {
+                        console.log("Access:",res)
+                        return fetch("http://localhost:8080/getAttempted?" + new URLSearchParams({
+                            email: user.email!
+                        }), {
+                            headers : {
+                                Authorization:"Bearer " + res
+                            }
+                        })
+                    }
+                ).then(res => res.json()).then((res: PersonalQuestion) => {
                     console.log(res)
                     const req = {
                         ids: res.attempted

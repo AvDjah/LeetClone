@@ -17,6 +17,9 @@ const createRouter = createBrowserRouter([
   }, {
     path : "/problem/:problemId",
     element : <ProblemPage/>
+  }, {
+    path : "/problem/all",
+    element : < Dashboard />
   }
 ])
 
